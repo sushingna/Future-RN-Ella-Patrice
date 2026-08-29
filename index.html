@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Nursing Quest 🧸🩺</title>
+<meta name="description" content="A cute little side quest made just for a future nurse." />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ===== WELCOME GATE ===== -->
+<div class="modal-overlay welcome-overlay" id="welcome-overlay" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
+  <div class="modal-card welcome-card">
+    <div class="teddy-bounce" aria-hidden="true">🧸</div>
+    <h2 id="welcome-title">Nursing Quest 🧸🩺</h2>
+    <p class="mission-text">Tap below to begin your side quest.</p>
+    <button class="btn btn-primary" id="btn-welcome-start">Welcome, Future RN Ella Patrice 🎓🩺</button>
+  </div>
+</div>
+
+<div class="bg-decor" aria-hidden="true">
+  <span class="float-item f1">🌸</span>
+  <span class="float-item f2">✨</span>
+  <span class="float-item f3">💕</span>
+  <span class="float-item f4">🧸</span>
+  <span class="float-item f5">🩺</span>
+  <span class="float-item f6">🌸</span>
+  <span class="float-item f7">✨</span>
+  <span class="float-item f8">💊</span>
+</div>
+
+<!-- ===== TOP NAV (desktop) ===== -->
+<header class="topnav">
+  <div class="topnav-inner">
+    <div class="brand">🧸 Nursing Quest</div>
+    <nav class="nav-links" aria-label="Primary navigation">
+      <button class="nav-link" data-route="home">Home</button>
+      <button class="nav-link" data-route="quests">Quests</button>
+      <button class="nav-link" data-route="minigames">Mini Games</button>
+      <button class="nav-link" data-route="messages">Messages</button>
+      <button class="nav-link" data-route="rewards">Rewards</button>
+    </nav>
+    <button class="icon-btn" id="btn-settings" aria-label="Open settings" aria-haspopup="dialog">⚙️</button>
+  </div>
+</header>
+
+<!-- ===== MAIN CONTENT ===== -->
+<main id="app">
+
+  <!-- HOME -->
+  <section class="page active" id="page-home" data-route="home" aria-label="Home">
+    <div class="page-inner">
+      <div class="card hero-card">
+        <div class="teddy-bounce" aria-hidden="true">🧸</div>
+        <h1>Hiiiii, Future Nurse! 🩺💕</h1>
+        <p class="subtitle">Welcome to your completely unnecessary but highly important nursing survival website.</p>
+        <p class="joke-line">Created because apparently surviving nursing school wasn't already enough of a side quest. 😭</p>
+        <div class="hero-actions">
+          <button class="btn btn-primary" id="btn-start-quest">START QUEST 🎮</button>
+          <button class="btn btn-secondary" id="btn-explore">EXPLORE WEBSITE ✨</button>
+        </div>
+      </div>
+
+      <div class="card status-card">
+        <h2>NURSING STATUS</h2>
+        <div class="status-row">
+          <span class="status-label">Energy</span>
+          <div class="status-bar"><div class="status-fill" id="home-energy-fill" style="width:45%; background:var(--lavender-deep);"></div></div>
+          <span class="status-pct" id="home-energy-pct">45%</span>
+        </div>
+        <div class="status-row">
+          <span class="status-label">Stress</span>
+          <div class="status-bar"><div class="status-fill" id="home-stress-fill" style="width:85%; background:var(--danger);"></div></div>
+          <span class="status-pct" id="home-stress-pct">85%</span>
+        </div>
+        <div class="status-row">
+          <span class="status-label">Sleep</span>
+          <div class="status-bar"><div class="status-fill" id="home-sleep-fill" style="width:10%; background:var(--pink-deep);"></div></div>
+          <span class="status-pct" id="home-sleep-pct">10%</span>
+        </div>
+        <div class="status-row">
+          <span class="status-label">Motivation</span>
+          <div class="status-bar"><div class="status-fill" id="home-motivation-fill" style="width:75%; background:var(--success);"></div></div>
+          <span class="status-pct" id="home-motivation-pct">75%</span>
+        </div>
+        <p class="joke-line small">Sleep status detected: critically low. 😭🩺</p>
+      </div>
+
+      <div class="card" id="home-explore-more">
+        <h2>What's here? ✨</h2>
+        <ul class="explore-list">
+          <li>🎮 <strong>Quests</strong> — tiny survival tasks, real XP.</li>
+          <li>🎯 <strong>Mini Games</strong> — Catch the Hearts &amp; Nursing Memory.</li>
+          <li>💌 <strong>Messages</strong> — jokes, encouragement, and one sincere note.</li>
+          <li>🏆 <strong>Rewards</strong> — achievements and a very important avocado shake.</li>
+        </ul>
+        <button class="btn btn-quest" id="btn-need-joke">😂 GIVE ME A NURSING JOKE</button>
+        <p class="joke-output" id="home-joke-output" aria-live="polite"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUESTS -->
+  <section class="page" id="page-quests" data-route="quests" aria-label="Quests">
+    <div class="page-inner">
+      <div class="card">
+        <h1 class="header-title">🩺 NURSING SURVIVAL QUEST</h1>
+        <div class="stats-panel">
+          <div class="stat"><span class="stat-label">LEVEL</span><span class="stat-value" id="stat-level">4</span></div>
+          <div class="stat"><span class="stat-label">XP</span><span class="stat-value" id="stat-xp">0</span></div>
+          <div class="stat"><span class="stat-label">QUESTS</span><span class="stat-value"><span id="stat-quests">0</span>/6</span></div>
+        </div>
+        <div class="progress-track" role="progressbar" aria-label="Quest progress" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0" id="progress-bar-wrap">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+
+        <div class="quest-list" id="quest-list">
+          <div class="quest-card" data-quest="study" data-xp="100">
+            <div class="quest-icon">📚</div>
+            <div class="quest-body">
+              <h3>Survive Studying</h3>
+              <p>Open the reviewer. Stare at it. Question every life decision.</p>
+              <span class="quest-reward">+100 XP</span>
+            </div>
+            <button class="btn btn-quest">Complete Quest</button>
+          </div>
+
+          <div class="quest-card" data-quest="duty" data-xp="150">
+            <div class="quest-icon">🩺</div>
+            <div class="quest-body">
+              <h3>Survive Duty</h3>
+              <p>Complete duty without questioning your existence.</p>
+              <span class="quest-reward">+150 XP</span>
+            </div>
+            <button class="btn btn-quest">Complete Quest</button>
+          </div>
+
+          <div class="quest-card" data-quest="exam" data-xp="200">
+            <div class="quest-icon">📝</div>
+            <div class="quest-body">
+              <h3>Survive the Exam</h3>
+              <p>May the questions be within the coverage. 😭</p>
+              <span class="quest-reward">+200 XP</span>
+            </div>
+            <button class="btn btn-quest">Complete Quest</button>
+          </div>
+
+          <div class="quest-card" data-quest="grass" data-xp="100">
+            <div class="quest-icon">😴</div>
+            <div class="quest-body">
+              <h3>Touch Grass</h3>
+              <p>Take a break before your brain files a resignation letter.</p>
+              <span class="quest-reward">+100 XP</span>
+            </div>
+            <button class="btn btn-quest">Complete Quest</button>
+          </div>
+
+          <div class="quest-card" data-quest="hydration" data-xp="50">
+            <div class="quest-icon">💧</div>
+            <div class="quest-body">
+              <h3>Hydration Check</h3>
+              <p>Drink water. No, coffee doesn't count. 😭</p>
+              <span class="quest-reward">+50 XP</span>
+            </div>
+            <button class="btn btn-quest">Complete Quest</button>
+          </div>
+
+          <div class="quest-card" data-quest="compare" data-xp="200">
+            <div class="quest-icon">💗</div>
+            <div class="quest-body">
+              <h3>Stop Comparing</h3>
+              <p>Your journey isn't a race.</p>
+              <span class="quest-reward">+200 XP</span>
+            </div>
+            <button class="btn btn-quest">Complete Quest</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Okay future nurse... be honest.</h2>
+        <p class="mission-text">How stressed are you today?</p>
+        <div class="slider-scale" aria-hidden="true">
+          <span>😌</span><span>🙂</span><span>😐</span><span>😭</span><span>💀</span>
+        </div>
+        <input type="range" min="0" max="100" value="85" id="stress-slider" aria-label="Stress level from 0 to 100" />
+        <p class="stress-readout" id="stress-readout"></p>
+      </div>
+
+      <div class="card prescription-card">
+        <div class="rx-symbol" aria-hidden="true">🩺</div>
+        <h2>NURSING PRESCRIPTION</h2>
+        <div class="rx-line"><span class="rx-label">PATIENT:</span> Future Nurse 🧸</div>
+        <div class="rx-line"><span class="rx-label">DIAGNOSIS:</span> Academic Exhaustion</div>
+        <div class="rx-label rx-block-label">SYMPTOMS:</div>
+        <ul class="rx-list">
+          <li>☑ Too much studying</li>
+          <li>☑ Too little sleep</li>
+          <li>☑ Random stress</li>
+          <li>☑ Existential crisis before exams</li>
+        </ul>
+        <div class="rx-label rx-block-label">TREATMENT:</div>
+        <ul class="rx-list">
+          <li>☑ Sleep</li>
+          <li>☑ Eat</li>
+          <li>☑ Drink water</li>
+          <li>☑ Take breaks</li>
+          <li>☑ Stop comparing yourself</li>
+          <li>☑ Believe in yourself</li>
+        </ul>
+        <div class="rx-line"><span class="rx-label">REFILLS:</span> UNLIMITED 💕</div>
+        <button class="btn btn-primary" id="btn-accept-treatment">ACCEPT TREATMENT 🥹</button>
+        <p class="rx-response hidden" id="rx-response">Treatment accepted. Now go drink water. 😭</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- MINI GAMES -->
+  <section class="page" id="page-minigames" data-route="minigames" aria-label="Mini games">
+    <div class="page-inner">
+
+      <div class="card" id="minigames-hub">
+        <h1 class="header-title">🎯 Mini Games</h1>
+        <p class="mission-text">Pick your side quest.</p>
+        <div class="game-choice-grid">
+          <button class="game-choice-card" id="open-hearts-game">
+            <div class="quest-icon">💕</div>
+            <h3>Catch the Hearts</h3>
+            <p>20 seconds. Tap hearts. Avoid 💀.</p>
+          </button>
+          <button class="game-choice-card" id="open-memory-game">
+            <div class="quest-icon">🧠</div>
+            <h3>Nursing Memory</h3>
+            <p>Watch the sequence. Repeat it back.</p>
+          </button>
+        </div>
+      </div>
+
+      <!-- Catch the Hearts sub-screen -->
+      <div class="card sub-screen hidden" id="hearts-game-view">
+        <button class="btn-back" data-back-target="minigames-hub">← Back</button>
+        <h2>Catch the Hearts 💕</h2>
+        <div class="game-hud">
+          <div class="hud-item">⏱️ <span id="game-timer">20</span>s</div>
+          <div class="hud-item">💗 Score: <span id="game-score">0</span></div>
+        </div>
+        <div class="game-container" id="game-container">
+          <button class="btn btn-primary" id="btn-start-minigame">Start Mini Game</button>
+          <p class="game-toast" id="game-toast" aria-live="polite"></p>
+        </div>
+      </div>
+
+      <!-- Nursing Memory sub-screen -->
+      <div class="card sub-screen hidden" id="memory-game-view">
+        <button class="btn-back" data-back-target="minigames-hub">← Back</button>
+        <h2>Nursing Memory 🧠</h2>
+        <p class="mission-text" id="memory-level-text">Level 1 — watch closely.</p>
+        <div class="memory-display" id="memory-display" aria-live="polite"></div>
+        <div class="memory-input-grid" id="memory-input-grid" aria-hidden="true"></div>
+        <p class="memory-result" id="memory-result" aria-live="polite"></p>
+        <button class="btn btn-primary" id="btn-start-memory">Start Round</button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- MESSAGES -->
+  <section class="page" id="page-messages" data-route="messages" aria-label="Messages">
+    <div class="page-inner">
+
+      <div class="card">
+        <h1 class="header-title">💌 A Little Message</h1>
+        <div id="message-locked-block">
+          <div class="lock-icon" aria-hidden="true">🔒</div>
+          <h2>LOCKED</h2>
+          <p class="mission-text" id="message-lock-text">Complete more quests to unlock this.</p>
+        </div>
+        <div id="message-unlocked-block" class="hidden">
+          <p class="message-lead">Okay, jokes aside...</p>
+          <div class="message-carousel" id="message-carousel">
+            <div class="message-track" id="message-track"></div>
+          </div>
+          <div class="message-dots" id="message-dots"></div>
+          <div class="message-nav">
+            <button class="msg-nav-btn" id="msg-prev" aria-label="Previous message">←</button>
+            <button class="msg-nav-btn" id="msg-next" aria-label="Next message">→</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>I NEED A LITTLE MOTIVATION 🥺</h2>
+        <div class="motivation-box" id="motivation-box" aria-live="polite">
+          <p>Tap the button for a tiny boost.</p>
+        </div>
+        <button class="btn btn-primary" id="btn-motivation">I NEED A LITTLE MOTIVATION 🥺</button>
+      </div>
+
+      <div class="card">
+        <h2>😂 Need a laugh?</h2>
+        <p class="joke-output" id="messages-joke-output" aria-live="polite">Tap for a random nursing-student joke.</p>
+        <button class="btn btn-quest" id="btn-joke-messages">😂 GIVE ME A NURSING JOKE</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- REWARDS -->
+  <section class="page" id="page-rewards" data-route="rewards" aria-label="Rewards">
+    <div class="page-inner">
+
+      <div class="card">
+        <h1 class="header-title">🏆 Achievements</h1>
+        <div class="achievements-grid" id="achievements-grid"></div>
+      </div>
+
+      <div class="card" id="bonus-locked-block">
+        <div class="lock-icon" aria-hidden="true">🔒</div>
+        <h2>LOCKED</h2>
+        <p class="mission-text">Complete all 6 quests to unlock this.</p>
+      </div>
+
+      <div class="card hidden" id="bonus-quest-block">
+        <div class="big-emoji" aria-hidden="true">🥑</div>
+        <h2>BONUS QUEST</h2>
+        <p class="mission-text">Wait... there's one more quest.</p>
+        <p class="mission-text">Remember the avocado shake side quest? 👀</p>
+        <div class="reward-box">
+          <p><strong>REWARD</strong></p>
+          <p>🥑 1 Avocado Shake</p>
+          <p>🥤 1 Refreshing Drink</p>
+        </div>
+        <button class="btn btn-primary" id="btn-claim-bonus">CLAIM BONUS QUEST 🥑🥤</button>
+        <p class="tiny-note">(totally optional, no pressure 🫶)</p>
+      </div>
+
+      <div class="card hidden" id="final-screen-block">
+        <div class="teddy-grad" aria-hidden="true">🧸🎓</div>
+        <h1>QUEST COMPLETE! 🎉</h1>
+        <div class="stats-panel final-stats">
+          <div class="stat"><span class="stat-label">⭐ XP</span><span class="stat-value">9999</span></div>
+          <div class="stat"><span class="stat-label">🩺 DUTIES SURVIVED</span><span class="stat-value">COUNTLESS</span></div>
+          <div class="stat"><span class="stat-label">📝 EXAMS SURVIVED</span><span class="stat-value">TOO MANY</span></div>
+          <div class="stat"><span class="stat-label">😭 STRESS ATTACKS</span><span class="stat-value">TOO MANY</span></div>
+          <div class="stat"><span class="stat-label">💗 GIVING UP</span><span class="stat-value">0</span></div>
+        </div>
+        <p class="status-line">STATUS: STILL GOING STRONG.</p>
+        <p class="closing-text">You don't have to have everything figured out.</p>
+        <p class="closing-text">Just keep going one day at a time.</p>
+        <p class="closing-text">And remember that someone is cheering for you. 🧸💕</p>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<!-- ===== BOTTOM NAV (mobile) ===== -->
+<nav class="bottom-nav" aria-label="Primary navigation mobile">
+  <button class="bottom-nav-link" data-route="home"><span aria-hidden="true">🏠</span><small>Home</small></button>
+  <button class="bottom-nav-link" data-route="quests"><span aria-hidden="true">🎮</span><small>Quests</small></button>
+  <button class="bottom-nav-link" data-route="minigames"><span aria-hidden="true">🎯</span><small>Games</small></button>
+  <button class="bottom-nav-link" data-route="messages"><span aria-hidden="true">💌</span><small>Messages</small></button>
+  <button class="bottom-nav-link" data-route="rewards"><span aria-hidden="true">🏆</span><small>Rewards</small></button>
+</nav>
+
+<!-- Floating joke button (always available) -->
+<button class="fab" id="btn-joke-fab" aria-label="Get a random nursing joke">😂</button>
+
+<!-- Settings modal -->
+<div class="modal-overlay hidden" id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+  <div class="modal-card">
+    <button class="modal-close" id="btn-close-settings" aria-label="Close settings">✕</button>
+    <h2 id="settings-title">⚙️ Settings</h2>
+    <div class="settings-row">
+      <span>🔊 Sound</span>
+      <button class="toggle-btn" id="toggle-sound" data-on="false">OFF</button>
+    </div>
+    <div class="settings-row">
+      <span>✨ Animations</span>
+      <button class="toggle-btn" id="toggle-animations" data-on="true">ON</button>
+    </div>
+    <div class="settings-row">
+      <span>🌙 Dark Mode</span>
+      <button class="toggle-btn" id="toggle-dark" data-on="false">OFF</button>
+    </div>
+    <button class="btn btn-secondary reset-link" id="btn-reset-progress">🔄 Reset Progress</button>
+  </div>
+</div>
+
+<div class="toast-layer" id="toast-layer" aria-live="polite"></div>
+<div class="confetti-layer" id="confetti-layer" aria-hidden="true"></div>
+
+<audio id="bg-music" src="audio/way.mp3" loop preload="auto"></audio>
+
+<script src="script.js"></script>
+</body>
+</html>
