@@ -39,7 +39,17 @@
     "I studied the wrong disease for 3 hours and I regret nothing. 😭📚",
     "Nursing school taught me two things: assessment first, and I'm always tired. 🩺",
     "My skincare routine is just crying in the clinical bathroom. ✨😭",
-    "Group project meeting: 5 minutes of studying, 55 minutes of shared trauma. 💀"
+    "Group project meeting: 5 minutes of studying, 55 minutes of shared trauma. 💀",
+    "Highlighted the entire page. Learned nothing. Felt productive. 🖍️😭",
+    "My care plan has better structure than my sleep schedule. 📋💀",
+    "Clinical instructor: 'Any questions?' Me, internally screaming: none that matter now. 🙃",
+    "I don't cry during sad movies anymore. I cried it all out during return demo. 😭🩺",
+    "Charting at 2am hits different when you can't feel your hand anymore. 🖊️💀",
+    "Nursing school gave me trust issues with 'this exam will be easy.' 📝😭",
+    "My planner says 'study.' My body says 'nap first, regret later.' 😴",
+    "I know the drug classifications better than my own class schedule. 💊📚",
+    "Every RLE day starts with hope and ends with existential silence. 🩺💀",
+    "Pretty sure my blood type is now 50% coffee. ☕🧸"
   ];
 
   const MOTIVATION_MESSAGES = [
@@ -58,7 +68,17 @@
     "Every hard shift is teaching you something.",
     "You didn't come this far to stop now.",
     "Someone out there is grateful you chose this path.",
-    "You're not behind. You're exactly on time for your own journey."
+    "You're not behind. You're exactly on time for your own journey.",
+    "You are stronger than the version of you who started this course.",
+    "Even your smallest effort today still counts.",
+    "The exhaustion is proof of how hard you've been trying.",
+    "You don't have to have it all figured out to keep going.",
+    "Every skill you're learning now is someone's future comfort.",
+    "It's okay if today was just about surviving.",
+    "You're allowed to be a beginner and still be doing great.",
+    "The version of you a year from now will thank you for not quitting.",
+    "You showed up today. That already matters.",
+    "Rest now, rise again — you're not out of chances, just out of energy."
   ];
 
   const MESSAGE_PAGES = [
@@ -98,12 +118,37 @@
     { id: 'academic_warrior', icon: '📚', name: 'Academic Warrior', desc: 'Complete all quests.' },
     { id: 'still_standing', icon: '🧸', name: 'Still Standing', desc: 'Reach maximum XP.' },
     { id: 'actually_smiled', icon: '😂', name: 'Actually Smiled', desc: 'Click the joke button 10 times.' },
-    { id: 'avocado_survivor', icon: '🥑', name: 'Avocado Survivor', desc: 'Unlock the bonus quest.' }
+    { id: 'avocado_survivor', icon: '🥑', name: 'Avocado Survivor', desc: 'Unlock the bonus quest.' },
+    { id: 'word_wizard', icon: '🔎', name: 'Word Wizard', desc: 'Complete the Nursing Word Search.' },
+    { id: 'shake_secured', icon: '🥤', name: 'Shake Secured', desc: 'Complete the secret Avocado Shake Run.' }
   ];
 
   const MEMORY_EMOJIS = ['🧸', '🩺', '🥑', '💕', '🌸', '🥤'];
 
+  const WORDSEARCH_LEVELS = [
+    ['NURSE', 'PULSE', 'CHART', 'WOUND', 'FEVER', 'MASK', 'DUTY', 'SHIFT', 'VITALS'],
+    ['TRIAGE', 'BANDAGE', 'SYRINGE', 'PATIENT', 'ALLERGY', 'CLINIC', 'INFECT', 'VOMIT', 'ORGAN'],
+    ['CATHETER', 'DIAGNOSIS', 'HOSPITAL', 'SURGERY', 'RECOVERY', 'INSULIN', 'SEIZURE', 'SANITIZE', 'MEDICINE'],
+    ['STETHOSCOPE', 'MEDICATION', 'VENTILATOR', 'ANESTHESIA', 'HEMORRHAGE', 'ANTIBIOTIC', 'EMERGENCY', 'DEHYDRATION', 'RESPIRATORY'],
+    ['CARDIOLOGY', 'PEDIATRICS', 'PSYCHIATRY', 'RADIOLOGY', 'ENDOCRINE', 'ISOLATION', 'OBSERVATION', 'OUTPATIENT', 'GERIATRICS']
+  ];
+  const WORDSEARCH_SIZE = 13;
+
+  const AVO_GOOD_ITEMS = [
+    { emoji: '🥤', type: 'shake', points: 25 },
+    { emoji: '💕', type: 'heart', points: 10 },
+    { emoji: '🧸', type: 'teddy', points: 15 },
+    { emoji: '💧', type: 'water', points: 5 }
+  ];
+  const AVO_BAD_ITEMS = [
+    { emoji: '📚', type: 'reviewer', points: -10 },
+    { emoji: '📝', type: 'requirements', points: -15 },
+    { emoji: '⏰', type: 'alarm', points: -10 },
+    { emoji: '💀', type: 'stress', points: -20 }
+  ];
+
   let reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let dailyResetHappened = false;
 
   /* ---------- state ---------- */
 
@@ -121,6 +166,8 @@
   let state = {
     xp: 0,
     completedQuests: [],
+    everCompletedQuestKeys: [],
+    lastQuestResetDate: null,
     achievements: {},
     jokeClicks: 0,
     energyLevel: DEFAULT_STATUS.energyLevel,
@@ -130,6 +177,8 @@
     bonusUnlocked: false,
     finalUnlocked: false,
     memoryLevel: 3,
+    wordSearchCompleted: false,
+    avocadoGameCompleted: false,
     settings: { sound: true, animations: true, dark: false }
   };
 
@@ -140,12 +189,38 @@
         const parsed = JSON.parse(raw);
         state = Object.assign(state, parsed);
         state.settings = Object.assign({ sound: true, animations: true, dark: false }, parsed.settings || {});
+        // Backfill for saves created before daily-reset & lifetime-tracking were added.
+        if (!parsed.everCompletedQuestKeys) {
+          state.everCompletedQuestKeys = [...(parsed.completedQuests || [])];
+        }
       }
     } catch (e) { /* ignore */ }
   }
 
   function saveState() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
+  }
+
+  function todayKey() {
+    return new Date().toDateString();
+  }
+
+  // Returns true if a reset actually happened (i.e. it wasn't the very first visit).
+  function checkDailyQuestReset() {
+    const today = todayKey();
+    if (state.lastQuestResetDate === today) return false;
+
+    const isFirstVisitEver = !state.lastQuestResetDate;
+    state.lastQuestResetDate = today;
+
+    if (isFirstVisitEver) {
+      saveState();
+      return false;
+    }
+
+    state.completedQuests = [];
+    saveState();
+    return true;
   }
 
   function getLevel() {
@@ -208,6 +283,11 @@
     btnWelcomeStart.addEventListener('click', () => {
       if (state.settings.sound) tryPlayMusic();
       dismissWelcome();
+      if (dailyResetHappened) {
+        setTimeout(() => {
+          showToast('🌅 New day! Your quests are refreshed — go earn more XP!');
+        }, 400);
+      }
     });
   }
 
@@ -365,12 +445,11 @@
     document.querySelectorAll('.quest-card').forEach((card) => {
       const key = card.dataset.quest;
       const btn = card.querySelector('.btn-quest');
-      if (state.completedQuests.includes(key)) {
-        card.classList.add('completed');
-        btn.classList.add('completed');
-        btn.textContent = 'Completed ✔';
-        btn.disabled = true;
-      }
+      const isCompleted = state.completedQuests.includes(key);
+      card.classList.toggle('completed', isCompleted);
+      btn.classList.toggle('completed', isCompleted);
+      btn.textContent = isCompleted ? 'Completed ✔' : 'Complete Quest';
+      btn.disabled = isCompleted;
     });
   }
 
@@ -393,6 +472,9 @@
   function completeQuest(key, xp, button) {
     if (state.completedQuests.includes(key)) return;
     state.completedQuests.push(key);
+    if (!state.everCompletedQuestKeys.includes(key)) {
+      state.everCompletedQuestKeys.push(key);
+    }
     const fromXp = state.xp;
     state.xp += xp;
     animateNumber(elXp, fromXp, state.xp, 600);
@@ -468,7 +550,14 @@
 
   document.getElementById('open-hearts-game').addEventListener('click', () => showSubScreen('hearts-game-view'));
   document.getElementById('open-memory-game').addEventListener('click', () => showSubScreen('memory-game-view'));
+  document.getElementById('open-wordsearch-game').addEventListener('click', () => showSubScreen('wordsearch-game-view'));
+  document.getElementById('open-avocado-game').addEventListener('click', () => {
+    showSubScreen('avocado-game-view');
+    resetAvocadoIntro();
+  });
   document.querySelectorAll('.btn-back').forEach((btn) => btn.addEventListener('click', backToHub));
+  const btnAvoBack = document.getElementById('btn-avo-back');
+  if (btnAvoBack) btnAvoBack.addEventListener('click', avoHardStop);
 
   /* ---------- catch the hearts ---------- */
 
@@ -479,7 +568,7 @@
   const gameToast = document.getElementById('game-toast');
 
   let gameScore = 0;
-  let gameTimeLeft = 20;
+  let gameTimeLeft = 60;
   let gameInterval = null;
   let spawnInterval = null;
   let activeTargets = [];
@@ -558,9 +647,9 @@
     gameContainer.innerHTML = '';
     gameContainer.appendChild(gameToast);
     gameScore = 0;
-    gameTimeLeft = 20;
+    gameTimeLeft = 60;
     gameScoreEl.textContent = '0';
-    gameTimerEl.textContent = '20';
+    gameTimerEl.textContent = '60';
 
     spawnInterval = setInterval(spawnTarget, 700);
     gameInterval = setInterval(() => {
@@ -588,6 +677,16 @@
     return state.memoryLevel;
   }
 
+  function memoryDisplayedLevel() {
+    return state.memoryLevel - 2;
+  }
+
+  function memoryPerItemMs() {
+    // Starts at 550ms per icon on level 1, drops as levels rise, floors at 220ms on level 10.
+    const lvl = memoryDisplayedLevel();
+    return Math.max(220, 550 - (lvl - 1) * 35);
+  }
+
   function buildMemoryInputGrid() {
     memoryInputGrid.innerHTML = '';
     MEMORY_EMOJIS.forEach((emoji) => {
@@ -610,9 +709,10 @@
     memoryPlayerInput = [];
     memoryAccepting = false;
     setMemoryButtonsEnabled(false);
-    memoryLevelText.textContent = `Level ${state.memoryLevel - 2} — watch closely.`;
+    memoryLevelText.textContent = `Level ${memoryDisplayedLevel()} — watch closely.`;
 
     const len = memorySequenceLength();
+    const perItemMs = memoryPerItemMs();
     memorySequence = [];
     for (let i = 0; i < len; i++) {
       memorySequence.push(MEMORY_EMOJIS[Math.floor(Math.random() * MEMORY_EMOJIS.length)]);
@@ -626,7 +726,7 @@
       memoryAccepting = true;
       setMemoryButtonsEnabled(true);
       btnStartMemory.disabled = false;
-    }, 1400 + len * 500);
+    }, 1200 + len * perItemMs);
   }
 
   function handleMemoryInput(emoji) {
@@ -645,7 +745,7 @@
       memoryAccepting = false;
       setMemoryButtonsEnabled(false);
       memoryResult.textContent = 'BIG BRAIN NURSE 🧠🩺';
-      state.memoryLevel = Math.min(state.memoryLevel + 1, 8);
+      state.memoryLevel = Math.min(state.memoryLevel + 1, 12);
       const fromXp = state.xp;
       state.xp += 30;
       animateNumber(elXp, fromXp, state.xp, 500);
@@ -658,6 +758,837 @@
   }
 
   btnStartMemory.addEventListener('click', startMemoryRound);
+
+  /* ---------- nursing word search ---------- */
+
+  const wsGridEl = document.getElementById('ws-grid');
+  const wsWordListEl = document.getElementById('ws-word-list');
+  const wsResultEl = document.getElementById('ws-result');
+  const wsFoundCountEl = document.getElementById('ws-found-count');
+  const wsTotalCountEl = document.getElementById('ws-total-count');
+  const wsTimerEl = document.getElementById('ws-timer');
+  const wsLevelTextEl = document.getElementById('ws-level-current');
+  const btnStartWordsearch = document.getElementById('btn-start-wordsearch');
+
+  const WS_DIRECTIONS = [
+    [0, 1], [0, -1], [1, 0], [-1, 0],
+    [1, 1], [1, -1], [-1, 1], [-1, -1]
+  ];
+
+  let wsLetters = [];
+  let wsRemainingWords = [];
+  let wsPlaying = false;
+  let wsSecondsElapsed = 0;
+  let wsTimerInterval = null;
+  let wsLevelIndex = 0;
+  let wsLevelWords = [];
+
+  let wsSelecting = false;
+  let wsSelStart = null;
+  let wsCurrentPath = [];
+
+  function wsRandomLetter() {
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    return letters[Math.floor(Math.random() * letters.length)];
+  }
+
+  function wsTryPlaceWord(word) {
+    for (let attempt = 0; attempt < 200; attempt++) {
+      const dir = WS_DIRECTIONS[Math.floor(Math.random() * WS_DIRECTIONS.length)];
+      const startRow = Math.floor(Math.random() * WORDSEARCH_SIZE);
+      const startCol = Math.floor(Math.random() * WORDSEARCH_SIZE);
+      const endRow = startRow + dir[0] * (word.length - 1);
+      const endCol = startCol + dir[1] * (word.length - 1);
+      if (endRow < 0 || endRow >= WORDSEARCH_SIZE || endCol < 0 || endCol >= WORDSEARCH_SIZE) continue;
+
+      let fits = true;
+      for (let i = 0; i < word.length; i++) {
+        const r = startRow + dir[0] * i;
+        const c = startCol + dir[1] * i;
+        const existing = wsLetters[r][c];
+        if (existing !== null && existing !== word[i]) { fits = false; break; }
+      }
+      if (!fits) continue;
+
+      for (let i = 0; i < word.length; i++) {
+        const r = startRow + dir[0] * i;
+        const c = startCol + dir[1] * i;
+        wsLetters[r][c] = word[i];
+      }
+      return true;
+    }
+    return false;
+  }
+
+  function wsGenerateGrid(words) {
+    wsLetters = Array.from({ length: WORDSEARCH_SIZE }, () => Array(WORDSEARCH_SIZE).fill(null));
+    const sortedWords = [...words].sort((a, b) => b.length - a.length);
+    sortedWords.forEach((word) => wsTryPlaceWord(word));
+    for (let r = 0; r < WORDSEARCH_SIZE; r++) {
+      for (let c = 0; c < WORDSEARCH_SIZE; c++) {
+        if (!wsLetters[r][c]) wsLetters[r][c] = wsRandomLetter();
+      }
+    }
+  }
+
+  function wsRenderGrid() {
+    wsGridEl.innerHTML = '';
+    wsGridEl.style.setProperty('--ws-size', WORDSEARCH_SIZE);
+    for (let r = 0; r < WORDSEARCH_SIZE; r++) {
+      for (let c = 0; c < WORDSEARCH_SIZE; c++) {
+        const cell = document.createElement('button');
+        cell.type = 'button';
+        cell.className = 'ws-cell';
+        cell.textContent = wsLetters[r][c];
+        cell.dataset.row = r;
+        cell.dataset.col = c;
+        cell.setAttribute('aria-label', `Row ${r + 1}, column ${c + 1}, letter ${wsLetters[r][c]}`);
+        cell.addEventListener('pointerdown', (e) => wsPointerDown(e, r, c, cell));
+        wsGridEl.appendChild(cell);
+      }
+    }
+  }
+
+  function wsRenderWordList() {
+    wsWordListEl.innerHTML = '';
+    wsLevelWords.forEach((word) => {
+      const chip = document.createElement('span');
+      chip.className = 'ws-chip';
+      chip.id = `ws-chip-${word}`;
+      chip.textContent = word;
+      if (!wsRemainingWords.includes(word)) chip.classList.add('found');
+      wsWordListEl.appendChild(chip);
+    });
+  }
+
+  function wsCellEl(r, c) {
+    return wsGridEl.querySelector(`.ws-cell[data-row="${r}"][data-col="${c}"]`);
+  }
+
+  function wsClearSelectingHighlight() {
+    wsGridEl.querySelectorAll('.ws-cell.selecting').forEach((el) => el.classList.remove('selecting'));
+  }
+
+  function wsGetCellFromPoint(clientX, clientY) {
+    const el = document.elementFromPoint(clientX, clientY);
+    if (!el || !el.closest) return null;
+    const cellEl = el.closest('.ws-cell');
+    if (!cellEl || !wsGridEl.contains(cellEl)) return null;
+    return { r: Number(cellEl.dataset.row), c: Number(cellEl.dataset.col) };
+  }
+
+  function wsComputePath(start, end) {
+    const dr = end.r - start.r;
+    const dc = end.c - start.c;
+    const isStraightLine = dr === 0 || dc === 0 || Math.abs(dr) === Math.abs(dc);
+    if (!isStraightLine) return null;
+    const steps = Math.max(Math.abs(dr), Math.abs(dc));
+    const sdr = dr === 0 ? 0 : dr / Math.abs(dr);
+    const sdc = dc === 0 ? 0 : dc / Math.abs(dc);
+    const path = [];
+    for (let i = 0; i <= steps; i++) {
+      path.push({ r: start.r + sdr * i, c: start.c + sdc * i });
+    }
+    return path;
+  }
+
+  function wsHighlightPath(path) {
+    wsClearSelectingHighlight();
+    path.forEach(({ r, c }) => {
+      const el = wsCellEl(r, c);
+      if (el) el.classList.add('selecting');
+    });
+  }
+
+  function wsFlashFail(cells) {
+    cells.forEach(({ r, c }) => {
+      const el = wsCellEl(r, c);
+      if (el) el.classList.add('fail');
+    });
+    setTimeout(() => {
+      cells.forEach(({ r, c }) => {
+        const el = wsCellEl(r, c);
+        if (el) el.classList.remove('fail');
+      });
+    }, 350);
+  }
+
+  function wsStartTimer() {
+    wsSecondsElapsed = 0;
+    wsTimerEl.textContent = '0';
+    clearInterval(wsTimerInterval);
+    wsTimerInterval = setInterval(() => {
+      wsSecondsElapsed += 1;
+      wsTimerEl.textContent = wsSecondsElapsed;
+    }, 1000);
+  }
+
+  function wsFinishGame() {
+    wsPlaying = false;
+    clearInterval(wsTimerInterval);
+    wsResultEl.textContent = `ALL 5 LEVELS COMPLETE! 🎉 Total time: ${wsSecondsElapsed}s`;
+
+    const fromXp = state.xp;
+    state.xp += 50;
+    animateNumber(elXp, fromXp, state.xp, 700);
+    renderQuestStats();
+    adjustStatus('motivation', 10);
+    state.wordSearchCompleted = true;
+    checkAchievements();
+    checkBonusUnlock();
+    saveState();
+    launchConfetti(24);
+    showToast('WORD SEARCH COMPLETE! +50 XP bonus 🔎💕');
+  }
+
+  function wsLevelComplete() {
+    const fromXp = state.xp;
+    state.xp += 30;
+    animateNumber(elXp, fromXp, state.xp, 500);
+    renderQuestStats();
+    saveState();
+
+    if (wsLevelIndex < WORDSEARCH_LEVELS.length - 1) {
+      showToast(`Level ${wsLevelIndex + 1} complete! +30 XP 🎉`);
+      wsResultEl.textContent = `Level ${wsLevelIndex + 1} complete! Loading level ${wsLevelIndex + 2}...`;
+      wsPlaying = false;
+      setTimeout(() => wsStartLevel(wsLevelIndex + 1), 1400);
+    } else {
+      wsFinishGame();
+    }
+  }
+
+  function wsFinishSelection(path) {
+    if (!path || path.length < 2) return;
+
+    const forward = path.map((p) => wsLetters[p.r][p.c]).join('');
+    const backward = forward.split('').reverse().join('');
+    const matchedWord = wsRemainingWords.find((w) => w === forward || w === backward);
+
+    if (matchedWord) {
+      path.forEach(({ r: pr, c: pc }) => {
+        const el = wsCellEl(pr, pc);
+        if (el) el.classList.add('found');
+      });
+      wsRemainingWords = wsRemainingWords.filter((w) => w !== matchedWord);
+      const chip = document.getElementById(`ws-chip-${matchedWord}`);
+      if (chip) chip.classList.add('found');
+      wsFoundCountEl.textContent = String(wsLevelWords.length - wsRemainingWords.length);
+      showToast(`Found ${matchedWord}! 🔎`);
+
+      if (wsRemainingWords.length === 0) {
+        wsLevelComplete();
+      }
+    } else {
+      wsFlashFail(path);
+    }
+  }
+
+  function wsPointerDown(e, r, c, cellEl) {
+    if (!wsPlaying) return;
+    e.preventDefault();
+    wsSelecting = true;
+    wsSelStart = { r, c };
+    wsCurrentPath = [{ r, c }];
+    if (cellEl.setPointerCapture) {
+      try { cellEl.setPointerCapture(e.pointerId); } catch (err) { /* no-op */ }
+    }
+    wsHighlightPath(wsCurrentPath);
+  }
+
+  function wsPointerMove(e) {
+    if (!wsSelecting || !wsSelStart) return;
+    const pt = wsGetCellFromPoint(e.clientX, e.clientY);
+    if (!pt) return;
+    const path = wsComputePath(wsSelStart, pt);
+    if (path) {
+      wsCurrentPath = path;
+      wsHighlightPath(path);
+    }
+  }
+
+  function wsPointerUp() {
+    if (!wsSelecting) return;
+    wsSelecting = false;
+    wsFinishSelection(wsCurrentPath);
+    wsClearSelectingHighlight();
+    wsSelStart = null;
+    wsCurrentPath = [];
+  }
+
+  wsGridEl.addEventListener('pointermove', wsPointerMove);
+  wsGridEl.addEventListener('pointerup', wsPointerUp);
+  wsGridEl.addEventListener('pointercancel', wsPointerUp);
+  wsGridEl.addEventListener('pointerleave', (e) => {
+    // Only cancel if the pointer actually left the browser viewport area tracking,
+    // not just moved between cells (pointer capture keeps events flowing to us).
+    if (e.buttons === 0) wsPointerUp();
+  });
+
+  function wsStartLevel(levelIdx) {
+    wsLevelIndex = levelIdx;
+    wsLevelWords = WORDSEARCH_LEVELS[levelIdx];
+    wsGenerateGrid(wsLevelWords);
+    wsRemainingWords = [...wsLevelWords];
+    wsSelecting = false;
+    wsSelStart = null;
+    wsCurrentPath = [];
+    wsPlaying = true;
+    wsResultEl.textContent = '';
+    wsFoundCountEl.textContent = '0';
+    wsTotalCountEl.textContent = String(wsLevelWords.length);
+    if (wsLevelTextEl) wsLevelTextEl.textContent = `${levelIdx + 1}`;
+    wsRenderGrid();
+    wsRenderWordList();
+  }
+
+  function startWordSearchGame() {
+    wsStartTimer();
+    wsStartLevel(0);
+  }
+
+  btnStartWordsearch.addEventListener('click', startWordSearchGame);
+
+  /* ---------- avocado shake run (secret mini-game) ---------- */
+
+  const AVO_INTRO_LINES = [
+    'Nurse Ella, we have an emergency. 🚨',
+    'The avocado shake is waiting. 🥑🥤',
+    "Unfortunately... you'll have to survive nursing school first. 💀",
+    '5 levels. Catch 5 avocados each level to clear it. 🥑',
+    "You have 5 lives. Missing an avocado or catching something bad costs 1 life — but you can keep going! 💪"
+  ];
+
+  const avoIntroBox = document.getElementById('avo-intro-box');
+  const avoIntroLine = document.getElementById('avo-intro-line');
+  const btnAvoNext = document.getElementById('btn-avo-next');
+  const avoHud = document.getElementById('avo-hud');
+  const avoCollectionEl = document.getElementById('avo-collection');
+  const avoContainer = document.getElementById('avo-container');
+  const avoPlayer = document.getElementById('avo-player');
+  const avoScoreEl = document.getElementById('avo-score');
+  const avoLivesEl = document.getElementById('avo-lives');
+  const avoMessageEl = document.getElementById('avo-message');
+  const avoEventBanner = document.getElementById('avo-event-banner');
+  const avoComboPopup = document.getElementById('avo-combo-popup');
+  const avoToast = document.getElementById('avo-toast');
+  const avoResults = document.getElementById('avo-results');
+  const avoLevelEl = document.getElementById('avo-level');
+
+  const AVO_PLAYER_SIZE = 44;
+  const AVO_MAX_LEVEL = 5;
+  const AVO_START_LIVES = 5;
+  const AVO_AVOCADOS_PER_LEVEL = 5;
+  // If this many ms pass without an avocado spawning, force one — so a level
+  // never goes cold and can never become impossible to finish.
+  const AVO_MAX_GAP_WITHOUT_AVOCADO = 3200;
+
+  let avoIntroIndex = 0;
+  let avoScore = 0;
+  let avoLives = AVO_START_LIVES;
+  let avoCurrentLevel = 1;
+  let avoLevelAvocadoCount = 0;
+  let avoCombo = 0;
+  let avoAvocadoCount = 0;
+  let avoShakeCount = 0;
+  let avoStressCount = 0;
+  let avoPlayerX = 0;
+  let avoKeys = { left: false, right: false };
+  let avoItems = [];
+  let avoRafId = null;
+  let avoSpawnTimeoutId = null;
+  let avoEventTimeoutIds = [];
+  let avoSpeedBoost = 1;
+  let avoLastFrameTime = 0;
+  let avoLevelStartTime = 0;
+  let avoLastAvocadoSpawnTime = 0;
+  let avoPlaying = false;
+
+  function avoShowIntroLine() {
+    avoIntroLine.textContent = AVO_INTRO_LINES[avoIntroIndex];
+    btnAvoNext.textContent = avoIntroIndex === AVO_INTRO_LINES.length - 1 ? 'START MISSION 🥑' : 'Next →';
+  }
+
+  btnAvoNext.addEventListener('click', () => {
+    if (avoIntroIndex < AVO_INTRO_LINES.length - 1) {
+      avoIntroIndex += 1;
+      avoShowIntroLine();
+    } else {
+      startAvocadoGame();
+    }
+  });
+
+  function resetAvocadoIntro() {
+    avoIntroIndex = 0;
+    avoShowIntroLine();
+    avoIntroBox.classList.remove('hidden');
+    avoHud.classList.add('hidden');
+    avoCollectionEl.classList.add('hidden');
+    avoContainer.classList.add('hidden');
+    avoMessageEl.classList.add('hidden');
+    avoResults.classList.add('hidden');
+    avoResults.innerHTML = '';
+    avoMessageEl.textContent = '';
+  }
+
+  function avoContainerWidth() {
+    return avoContainer.clientWidth || 300;
+  }
+
+  function clampAvoPlayerX() {
+    const w = avoContainerWidth();
+    avoPlayerX = Math.max(0, Math.min(avoPlayerX, w - AVO_PLAYER_SIZE));
+  }
+
+  function setAvoPlayerPosition() {
+    avoPlayer.style.left = avoPlayerX + 'px';
+  }
+
+  function renderAvoLives() {
+    avoLivesEl.textContent = avoLives > 0 ? '❤️'.repeat(avoLives) : '💔';
+  }
+
+  function flashAvoToast(text) {
+    avoToast.textContent = text;
+    avoToast.classList.add('show');
+    clearTimeout(avoToast._t);
+    avoToast._t = setTimeout(() => avoToast.classList.remove('show'), 1300);
+  }
+
+  function flashAvoEventBanner(text, duration) {
+    avoEventBanner.textContent = text;
+    avoEventBanner.classList.add('show');
+    clearTimeout(avoEventBanner._t);
+    avoEventBanner._t = setTimeout(() => avoEventBanner.classList.remove('show'), duration || 1800);
+  }
+
+  function avoShowCombo() {
+    avoComboPopup.textContent = `COMBO x${avoCombo} 🔥`;
+    avoComboPopup.classList.add('show');
+    clearTimeout(avoComboPopup._t);
+    avoComboPopup._t = setTimeout(() => avoComboPopup.classList.remove('show'), 900);
+    flashAvoToast('OKAYYY NURSE ELLA 🔥🩺');
+    avoScore += Math.min(avoCombo, 10) * 2;
+  }
+
+  function avoCreateItem(cfg) {
+    const el = document.createElement('div');
+    el.className = 'avo-falling' + (cfg.extraClass ? ' ' + cfg.extraClass : '');
+    el.textContent = cfg.emoji;
+    const size = cfg.size || 34;
+    el.style.fontSize = size + 'px';
+    const w = avoContainerWidth();
+    const x = Math.random() * Math.max(w - size, 10);
+    el.style.left = x + 'px';
+    el.style.top = '-50px';
+    avoContainer.insertBefore(el, avoToast);
+    // Fall speed ramps up noticeably with each level, on top of a per-item
+    // random base speed and any temporary event boost.
+    const levelSpeedMultiplier = 1 + (avoCurrentLevel - 1) * 0.35;
+    const baseSpeed = cfg.speed || 85 + Math.random() * 50;
+    const speed = baseSpeed * levelSpeedMultiplier * avoSpeedBoost;
+    avoItems.push({
+      el, x, y: -50, size, speed,
+      isBad: !!cfg.isBad, points: cfg.points, type: cfg.type,
+      catchMessage: cfg.catchMessage, badMessage: cfg.badMessage, isAvocado: !!cfg.isAvocado
+    });
+    if (cfg.isAvocado) avoLastAvocadoSpawnTime = performance.now();
+  }
+
+  function avoRemoveItem(item) {
+    if (item.el.parentNode) item.el.parentNode.removeChild(item.el);
+    avoItems = avoItems.filter((i) => i !== item);
+  }
+
+  function avoSpawnAvocado() {
+    flashAvoEventBanner('🥑 Avocado spotted!', 1100);
+    avoCreateItem({
+      emoji: '🥑', type: 'avocado', isBad: false, isAvocado: true, points: 10, size: 38,
+      catchMessage: 'Avocado secured! 🥑✅'
+    });
+  }
+
+  function avoSpawnItem() {
+    const now = performance.now();
+    const sinceLastAvocado = now - avoLastAvocadoSpawnTime;
+    // Force an avocado if too much time has passed without one, so the level
+    // is always winnable and never goes dry.
+    const mustSpawnAvocado = sinceLastAvocado >= AVO_MAX_GAP_WITHOUT_AVOCADO;
+    // Otherwise, avocados still make up the bulk of spawns.
+    const avocadoChance = 0.5;
+    if (mustSpawnAvocado || Math.random() < avocadoChance) {
+      avoSpawnAvocado();
+      return;
+    }
+    const badChance = Math.min(0.35, 0.2 + (avoCurrentLevel - 1) * 0.03);
+    const isBad = Math.random() < badChance;
+    const pool = isBad ? AVO_BAD_ITEMS : AVO_GOOD_ITEMS;
+    const def = pool[Math.floor(Math.random() * pool.length)];
+    avoCreateItem({ emoji: def.emoji, type: def.type, isBad, points: def.points, size: 34 });
+  }
+
+  function avoScheduleSpawn() {
+    if (!avoPlaying) return;
+    avoSpawnItem();
+    const levelSpeedup = (avoCurrentLevel - 1) * 25;
+    const interval = Math.max(420, 900 - levelSpeedup);
+    avoSpawnTimeoutId = setTimeout(avoScheduleSpawn, interval);
+  }
+
+  function avoBadMessageFor(type) {
+    if (type === 'reviewer_event') return 'WHY WOULD YOU DO THAT?! 😭';
+    return 'OUCH 😭 Nursing student encountered academic damage. -1 life';
+  }
+
+  function avoLoseLife(msg) {
+    avoLives = Math.max(0, avoLives - 1);
+    renderAvoLives();
+    flashAvoToast(msg);
+    if (avoLives <= 0) {
+      avoMessageEl.textContent = 'CODE BLUE! 🚨 Out of lives!';
+      avoMissionFailed('You ran out of hearts before finishing all 5 levels.');
+    }
+  }
+
+  function avoCatchItem(item) {
+    avoRemoveItem(item);
+    if (item.isBad) {
+      avoScore = Math.max(0, avoScore + item.points);
+      avoCombo = 0;
+      if (item.type === 'stress') avoStressCount += 1;
+      avoLoseLife(item.badMessage || avoBadMessageFor(item.type));
+    } else {
+      avoScore += item.points;
+      avoCombo += 1;
+      if (item.type === 'avocado' || item.type === 'legendary') avoAvocadoCount += 1;
+      if (item.type === 'shake') avoShakeCount += 1;
+      flashAvoToast(item.catchMessage || `+${item.points} 🥑`);
+      if (avoCombo >= 3) avoShowCombo();
+      if (item.type === 'coffee') {
+        setTimeout(() => flashAvoToast('Sleep has left the chat. 💀'), 700);
+      }
+      if (item.type === 'legendary') {
+        launchConfetti(16);
+        flashAvoEventBanner('LEGENDARY AVOCADO ACQUIRED! 🥑✨', 2000);
+      }
+      if ((item.type === 'avocado' || item.type === 'legendary') && avoPlaying) {
+        avoLevelAvocadoCount += 1;
+        avoScoreEl.textContent = avoScore;
+        avoCollectionEl.textContent = `🥑 Avocados: ${Math.min(avoLevelAvocadoCount, AVO_AVOCADOS_PER_LEVEL)}/${AVO_AVOCADOS_PER_LEVEL}`;
+        if (avoLevelAvocadoCount >= AVO_AVOCADOS_PER_LEVEL) {
+          avoLevelComplete();
+          return;
+        }
+      }
+    }
+    avoScoreEl.textContent = avoScore;
+    avoCollectionEl.textContent = `🥑 Avocados: ${Math.min(avoLevelAvocadoCount, AVO_AVOCADOS_PER_LEVEL)}/${AVO_AVOCADOS_PER_LEVEL}`;
+  }
+
+  function avoTriggerInstructorEvent() {
+    if (!avoPlaying) return;
+    flashAvoEventBanner('🚨 INSTRUCTOR DETECTED! ACT NORMAL!! 😭', 2600);
+    avoItems.forEach((it) => { it.speed *= 1.5; });
+    avoSpeedBoost = 1.5;
+    setTimeout(() => { avoSpeedBoost = 1; }, 2800);
+  }
+
+  function avoTriggerReviewerEvent() {
+    if (!avoPlaying) return;
+    flashAvoEventBanner('📚 SURPRISE REVIEWER!', 1600);
+    avoCreateItem({ emoji: '📚', type: 'reviewer_event', isBad: true, points: -15, size: 56, extraClass: 'avo-reviewer', badMessage: 'WHY WOULD YOU DO THAT?! 😭 -1 life' });
+  }
+
+  function avoTriggerCoffeeEvent() {
+    if (!avoPlaying) return;
+    flashAvoEventBanner('☕ COFFEE BOOST INCOMING', 1600);
+    avoCreateItem({ emoji: '☕', type: 'coffee', isBad: false, points: 20, size: 38, catchMessage: 'Temporary energy acquired. ☕🩺' });
+  }
+
+  function avoTriggerLegendaryEvent() {
+    if (!avoPlaying) return;
+    flashAvoEventBanner('✨ Something legendary is falling...', 1400);
+    avoCreateItem({ emoji: '🥑', type: 'legendary', isBad: false, isAvocado: true, points: 50, size: 44, extraClass: 'avo-golden', catchMessage: 'LEGENDARY AVOCADO ACQUIRED! 🥑✨' });
+  }
+
+  function avoScheduleLevelEvents() {
+    avoEventTimeoutIds.forEach(clearTimeout);
+    avoEventTimeoutIds = [
+      setTimeout(avoTriggerInstructorEvent, 7000),
+      setTimeout(avoTriggerReviewerEvent, 16000),
+      setTimeout(avoTriggerCoffeeEvent, 26000),
+      setTimeout(avoTriggerLegendaryEvent, 36000)
+    ];
+  }
+
+  function avoLoop(now) {
+    if (!avoPlaying) return;
+    const dt = avoLastFrameTime ? Math.min((now - avoLastFrameTime) / 1000, 0.05) : 0.016;
+    avoLastFrameTime = now;
+
+    const moveSpeed = 420;
+    if (avoKeys.left) avoPlayerX -= moveSpeed * dt;
+    if (avoKeys.right) avoPlayerX += moveSpeed * dt;
+    clampAvoPlayerX();
+    setAvoPlayerPosition();
+
+    const containerHeight = avoContainer.clientHeight || 360;
+    const playerLeft = avoPlayerX;
+    const playerRight = avoPlayerX + AVO_PLAYER_SIZE;
+    const playerTop = containerHeight - AVO_PLAYER_SIZE - 4;
+
+    avoItems.slice().forEach((item) => {
+      item.y += item.speed * dt;
+      item.el.style.top = item.y + 'px';
+      const itemBottom = item.y + item.size;
+      if (itemBottom >= playerTop) {
+        const overlap = item.x + item.size > playerLeft && item.x < playerRight;
+        if (overlap) {
+          avoCatchItem(item);
+          return;
+        }
+      }
+      if (itemBottom >= containerHeight) {
+        // Missing an avocado costs a life so the player always feels the
+        // stakes, but missing an obstacle is free — only catching those hurts.
+        if (item.isAvocado) {
+          avoRemoveItem(item);
+          avoLoseLife('Missed the avocado! 😭 -1 life');
+        } else {
+          avoRemoveItem(item);
+        }
+      }
+    });
+
+    if (avoPlaying) avoRafId = requestAnimationFrame(avoLoop);
+  }
+
+  function avoRenderResults() {
+    avoResults.classList.remove('hidden');
+    avoResults.innerHTML = `
+      <p style="font-family:var(--font-display);font-weight:700;font-size:1.15rem;">🥑 ALL 5 LEVELS CLEARED!</p>
+      <div class="stats-panel" style="margin-top:10px;">
+        <div class="stat"><span class="stat-label">SCORE</span><span class="stat-value">${avoScore}</span></div>
+        <div class="stat"><span class="stat-label">AVOCADOS</span><span class="stat-value">${avoAvocadoCount}</span></div>
+        <div class="stat"><span class="stat-label">SHAKES</span><span class="stat-value">${avoShakeCount}</span></div>
+        <div class="stat"><span class="stat-label">STRESS CAUGHT</span><span class="stat-value">${avoStressCount}</span></div>
+      </div>
+      <p class="mission-text">LIVES REMAINING: ${avoLives > 0 ? '❤️'.repeat(avoLives) : '💔'}</p>
+      <p class="mission-text" style="margin-top:6px;">She made it through every level. She deserves that avocado. 🥑🏆</p>
+      <button class="btn btn-primary" id="btn-avo-continue" style="margin-top:10px;">Continue 🧸</button>
+    `;
+    document.getElementById('btn-avo-continue').addEventListener('click', avoRevealSecretEnding);
+  }
+
+  function avoRenderLevelComplete() {
+    avoResults.classList.remove('hidden');
+    const isLast = avoCurrentLevel >= AVO_MAX_LEVEL;
+    avoResults.innerHTML = `
+      <p style="font-family:var(--font-display);font-weight:700;font-size:1.15rem;color:var(--pink-deep);">✅ LEVEL ${avoCurrentLevel} COMPLETE!</p>
+      <p class="mission-text" style="margin-top:6px;">All 5 avocados caught! 🥑🥑🥑🥑🥑</p>
+      <div class="stats-panel" style="margin-top:10px;">
+        <div class="stat"><span class="stat-label">SCORE</span><span class="stat-value">${avoScore}</span></div>
+        <div class="stat"><span class="stat-label">LIVES LEFT</span><span class="stat-value">${avoLives}</span></div>
+      </div>
+      <button class="btn btn-primary" id="btn-avo-level-continue" style="margin-top:12px;">${isLast ? 'Finish Mission 🎉' : `Continue to Level ${avoCurrentLevel + 1} →`}</button>
+    `;
+    document.getElementById('btn-avo-level-continue').addEventListener('click', () => {
+      if (isLast) {
+        finishAvocadoGame();
+      } else {
+        avoCurrentLevel += 1;
+        avoStartLevel();
+      }
+    });
+  }
+
+  function avoRenderFailure(reason) {
+    avoResults.classList.remove('hidden');
+    avoResults.innerHTML = `
+      <p style="font-family:var(--font-display);font-weight:700;font-size:1.15rem;color:var(--pink-deep);">💀 MISSION FAILED</p>
+      <p class="mission-text" style="margin-top:6px;">${reason}</p>
+      <div class="stats-panel" style="margin-top:10px;">
+        <div class="stat"><span class="stat-label">LEVEL REACHED</span><span class="stat-value">${avoCurrentLevel}/${AVO_MAX_LEVEL}</span></div>
+        <div class="stat"><span class="stat-label">SCORE</span><span class="stat-value">${avoScore}</span></div>
+      </div>
+      <p class="mission-text" style="margin-top:8px;">No avocado shake this time. 😭</p>
+      <button class="btn btn-primary" id="btn-avo-retry" style="margin-top:10px;">TRY AGAIN 🔁</button>
+    `;
+    document.getElementById('btn-avo-retry').addEventListener('click', resetAvocadoIntro);
+  }
+
+  function avoRevealSecretEnding() {
+    avoResults.innerHTML += `
+      <div class="avo-dialogue-box" style="margin-top:14px;">
+        <div class="teddy-bounce" aria-hidden="true">🧸</div>
+        <p class="avo-dialogue-line">Congratulations, Nurse Ella! You've successfully completed the most important clinical requirement. 🩺</p>
+        <p class="avo-dialogue-line">🥑 SECURING THE AVOCADO SHAKE 🥤</p>
+        <p class="avo-dialogue-line" style="margin-bottom:0;">Reward unlocked. 🎁</p>
+      </div>
+      <div class="reward-box">
+        <p><strong>🎁 BONUS REWARD</strong></p>
+        <p>🥑 Avocado Shake</p>
+        <p>🧸 One hardworking nurse</p>
+        <p>💕 +100 happiness</p>
+      </div>
+      <div class="avo-dialogue-box">
+        <p class="avo-dialogue-line">Clinical evaluation:</p>
+        <p class="avo-stars">Avocado handling: ⭐⭐⭐⭐⭐</p>
+        <p class="avo-stars">Stress management: ⭐⭐⭐</p>
+        <p class="avo-stars">Nursing survival: ⭐⭐⭐⭐⭐</p>
+        <p class="avo-stars">Getting the avocado shake: ⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐</p>
+        <p class="mission-text" style="margin-top:8px;">Result: PASS. 🩺✅</p>
+        <p class="mission-text">No further examinations are required. 😭</p>
+      </div>
+      <p class="mission-text" style="margin-top:10px;">Okay, jokes aside...</p>
+      <p class="mission-text">You deserve a little treat after surviving all those quests. 🥹🥑🥤</p>
+      <button class="btn btn-primary" id="btn-avo-claim">CLAIM YOUR AVOCADO 🥑🥤</button>
+      <p class="tiny-note">(totally optional, no pressure 🫶)</p>
+      <button class="btn btn-secondary" id="btn-avo-restart" style="margin-top:10px;">Play Again</button>
+    `;
+    document.getElementById('btn-avo-claim').addEventListener('click', (e) => {
+      launchConfetti(24);
+      showToast('Avocado shake secured. Reward claimed. 🥑🥤');
+      e.target.disabled = true;
+      e.target.textContent = 'Claimed 💕';
+    });
+    document.getElementById('btn-avo-restart').addEventListener('click', resetAvocadoIntro);
+  }
+
+  function avoStopTimers() {
+    clearTimeout(avoSpawnTimeoutId);
+    avoEventTimeoutIds.forEach(clearTimeout);
+    avoEventTimeoutIds = [];
+    cancelAnimationFrame(avoRafId);
+  }
+
+  function avoHardStop() {
+    if (!avoPlaying) return;
+    avoPlaying = false;
+    avoStopTimers();
+    avoItems.slice().forEach(avoRemoveItem);
+  }
+
+  function avoLevelComplete() {
+    if (!avoPlaying) return;
+    avoPlaying = false;
+    avoStopTimers();
+    avoItems.slice().forEach(avoRemoveItem);
+    avoContainer.classList.add('hidden');
+    avoHud.classList.add('hidden');
+    avoCollectionEl.classList.add('hidden');
+    avoMessageEl.classList.add('hidden');
+
+    avoRenderLevelComplete();
+  }
+
+  function avoMissionFailed(reason) {
+    if (!avoPlaying) return;
+    avoPlaying = false;
+    avoStopTimers();
+    avoItems.slice().forEach(avoRemoveItem);
+    avoContainer.classList.add('hidden');
+    avoHud.classList.add('hidden');
+    avoCollectionEl.classList.add('hidden');
+    avoMessageEl.classList.add('hidden');
+
+    avoRenderFailure(reason);
+
+    adjustStatus('stress', 5);
+    saveState();
+  }
+
+  function finishAvocadoGame() {
+    avoContainer.classList.add('hidden');
+    avoHud.classList.add('hidden');
+    avoCollectionEl.classList.add('hidden');
+    avoMessageEl.classList.add('hidden');
+
+    avoRenderResults();
+
+    const fromXp = state.xp;
+    state.xp += Math.max(0, avoScore) + 200;
+    animateNumber(elXp, fromXp, state.xp, 700);
+    renderQuestStats();
+    adjustStatus('motivation', Math.min(15, Math.max(2, Math.round(avoScore / 30))));
+    adjustStatus('stress', -8);
+    state.avocadoGameCompleted = true;
+    checkAchievements();
+    checkBonusUnlock();
+    saveState();
+    launchConfetti(24);
+  }
+
+  function startAvocadoGame() {
+    avoIntroBox.classList.add('hidden');
+
+    avoScore = 0;
+    avoLives = AVO_START_LIVES;
+    avoCombo = 0;
+    avoAvocadoCount = 0;
+    avoShakeCount = 0;
+    avoStressCount = 0;
+    avoCurrentLevel = 1;
+    avoScoreEl.textContent = '0';
+    renderAvoLives();
+
+    avoStartLevel();
+  }
+
+  function avoStartLevel() {
+    avoHud.classList.remove('hidden');
+    avoCollectionEl.classList.remove('hidden');
+    avoContainer.classList.remove('hidden');
+    avoMessageEl.classList.remove('hidden');
+    avoResults.classList.add('hidden');
+    avoResults.innerHTML = '';
+
+    avoLevelAvocadoCount = 0;
+    avoSpeedBoost = 1;
+    avoLevelEl.textContent = `Level ${avoCurrentLevel}/${AVO_MAX_LEVEL}`;
+    avoCollectionEl.textContent = `🥑 Avocados: 0/${AVO_AVOCADOS_PER_LEVEL}`;
+    avoMessageEl.textContent = `Level ${avoCurrentLevel}: catch ${AVO_AVOCADOS_PER_LEVEL} avocados! 🥑`;
+
+    avoItems.slice().forEach(avoRemoveItem);
+
+    const w = avoContainerWidth();
+    avoPlayerX = Math.max((w - AVO_PLAYER_SIZE) / 2, 0);
+    setAvoPlayerPosition();
+
+    avoPlaying = true;
+    avoLastFrameTime = 0;
+    avoLevelStartTime = performance.now();
+    avoLastAvocadoSpawnTime = avoLevelStartTime;
+    clearTimeout(avoSpawnTimeoutId);
+    avoScheduleSpawn();
+    avoScheduleLevelEvents();
+    avoRafId = requestAnimationFrame(avoLoop);
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (!avoPlaying) return;
+    const key = e.key.toLowerCase();
+    if (e.key === 'ArrowLeft' || key === 'a') { avoKeys.left = true; e.preventDefault(); }
+    if (e.key === 'ArrowRight' || key === 'd') { avoKeys.right = true; e.preventDefault(); }
+  });
+  document.addEventListener('keyup', (e) => {
+    const key = e.key.toLowerCase();
+    if (e.key === 'ArrowLeft' || key === 'a') avoKeys.left = false;
+    if (e.key === 'ArrowRight' || key === 'd') avoKeys.right = false;
+  });
+
+  function avoHandleTouch(e) {
+    if (!avoPlaying) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    if (!touch) return;
+    const rect = avoContainer.getBoundingClientRect();
+    avoPlayerX = touch.clientX - rect.left - AVO_PLAYER_SIZE / 2;
+    clampAvoPlayerX();
+    setAvoPlayerPosition();
+  }
+  avoContainer.addEventListener('touchstart', avoHandleTouch, { passive: false });
+  avoContainer.addEventListener('touchmove', avoHandleTouch, { passive: false });
 
   /* ---------- messages ---------- */
 
@@ -734,12 +1665,12 @@
   });
 
   function checkMessageUnlock() {
-    if (state.completedQuests.length >= MESSAGE_UNLOCK_THRESHOLD) {
+    if (state.everCompletedQuestKeys.length >= MESSAGE_UNLOCK_THRESHOLD) {
       messageLockedBlock.classList.add('hidden');
       messageUnlockedBlock.classList.remove('hidden');
       buildMessageCarousel();
     } else {
-      const remaining = MESSAGE_UNLOCK_THRESHOLD - state.completedQuests.length;
+      const remaining = MESSAGE_UNLOCK_THRESHOLD - state.everCompletedQuestKeys.length;
       messageLockText.textContent = `Complete ${remaining} more quest${remaining === 1 ? '' : 's'} to unlock this.`;
     }
   }
@@ -800,12 +1731,14 @@
 
   function isAchievementEarned(id) {
     switch (id) {
-      case 'first_step': return state.completedQuests.length >= 1;
-      case 'future_nurse': return state.completedQuests.length >= 3;
-      case 'academic_warrior': return state.completedQuests.length >= TOTAL_QUESTS;
+      case 'first_step': return state.everCompletedQuestKeys.length >= 1;
+      case 'future_nurse': return state.everCompletedQuestKeys.length >= 3;
+      case 'academic_warrior': return state.everCompletedQuestKeys.length >= TOTAL_QUESTS;
       case 'still_standing': return state.xp >= MAX_QUEST_XP;
       case 'actually_smiled': return state.jokeClicks >= 10;
       case 'avocado_survivor': return !!state.bonusUnlocked;
+      case 'word_wizard': return !!state.wordSearchCompleted;
+      case 'shake_secured': return !!state.avocadoGameCompleted;
       default: return false;
     }
   }
@@ -854,12 +1787,21 @@
   const finalScreenBlock = document.getElementById('final-screen-block');
 
   function checkBonusUnlock() {
-    if (state.completedQuests.length >= TOTAL_QUESTS) {
+    if (state.everCompletedQuestKeys.length >= TOTAL_QUESTS) {
       bonusLockedBlock.classList.add('hidden');
       bonusQuestBlock.classList.remove('hidden');
     }
     if (state.finalUnlocked) {
       finalScreenBlock.classList.remove('hidden');
+    }
+    if (state.bonusUnlocked) {
+      const claimBtn = document.getElementById('btn-claim-bonus');
+      const claimInstruction = document.getElementById('claim-instruction');
+      if (claimBtn) {
+        claimBtn.disabled = true;
+        claimBtn.textContent = 'BONUS QUEST CLAIMED ✅';
+      }
+      if (claimInstruction) claimInstruction.classList.remove('hidden');
     }
   }
 
@@ -874,7 +1816,12 @@
     checkAchievements();
     finalScreenBlock.classList.remove('hidden');
     launchConfetti(40);
-    showToast('YAYYY! 🥹💕 Avocado shake quest unlocked.');
+    showToast('YAYYY! 🥹💕 Now go tell Francisco Dag-uman you completed it!');
+    const claimBtn = document.getElementById('btn-claim-bonus');
+    claimBtn.disabled = true;
+    claimBtn.textContent = 'BONUS QUEST CLAIMED ✅';
+    const claimInstruction = document.getElementById('claim-instruction');
+    if (claimInstruction) claimInstruction.classList.remove('hidden');
     finalScreenBlock.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
   });
 
@@ -894,9 +1841,12 @@
     toggleDark.textContent = state.settings.dark ? 'ON' : 'OFF';
   }
 
-  document.getElementById('btn-settings').addEventListener('click', () => {
+  function openSettingsModal() {
     settingsModal.classList.remove('hidden');
-  });
+  }
+  document.getElementById('btn-settings').addEventListener('click', openSettingsModal);
+  const btnSettingsMobile = document.getElementById('btn-settings-mobile');
+  if (btnSettingsMobile) btnSettingsMobile.addEventListener('click', openSettingsModal);
   document.getElementById('btn-close-settings').addEventListener('click', () => {
     settingsModal.classList.add('hidden');
   });
@@ -940,6 +1890,8 @@
     state = {
       xp: 0,
       completedQuests: [],
+      everCompletedQuestKeys: [],
+      lastQuestResetDate: todayKey(),
       achievements: {},
       jokeClicks: 0,
       energyLevel: DEFAULT_STATUS.energyLevel,
@@ -949,6 +1901,7 @@
       bonusUnlocked: false,
       finalUnlocked: false,
       memoryLevel: 3,
+      wordSearchCompleted: false,
       settings: keepSettings
     };
     saveState();
@@ -975,6 +1928,13 @@
     bonusLockedBlock.classList.remove('hidden');
     bonusQuestBlock.classList.add('hidden');
     finalScreenBlock.classList.add('hidden');
+    const claimBtnReset = document.getElementById('btn-claim-bonus');
+    if (claimBtnReset) {
+      claimBtnReset.disabled = false;
+      claimBtnReset.textContent = 'CLAIM BONUS QUEST 🥑🥤';
+    }
+    const claimInstructionReset = document.getElementById('claim-instruction');
+    if (claimInstructionReset) claimInstructionReset.classList.add('hidden');
 
     gameContainer.innerHTML = '';
     const startBtn = document.createElement('button');
@@ -984,10 +1944,8 @@
     startBtn.addEventListener('click', startHeartsGame);
     gameContainer.appendChild(startBtn);
     gameContainer.appendChild(gameToast);
-    gameTimerEl.textContent = '20';
+    gameTimerEl.textContent = '60';
     gameScoreEl.textContent = '0';
-
-    memoryDisplay.textContent = '';
     memoryResult.textContent = '';
     memoryLevelText.textContent = 'Level 1 — watch closely.';
     setMemoryButtonsEnabled(false);
@@ -1002,6 +1960,7 @@
 
   function init() {
     loadState();
+    dailyResetHappened = checkDailyQuestReset();
     if (welcomeOverlay) document.body.classList.add('welcome-open');
     buildMemoryInputGrid();
     applyAnimationSetting();
@@ -1025,6 +1984,15 @@
     const route = VALID_ROUTES.includes(initialRoute) ? initialRoute : 'home';
     history.replaceState({ route: route }, '', '#' + route);
     renderRoute(route);
+
+    // Catch the date rolling over while the app stays open (e.g. left open overnight).
+    setInterval(() => {
+      if (checkDailyQuestReset()) {
+        renderQuestCards();
+        renderQuestStats();
+        showToast('🌅 New day! Your quests are refreshed — go earn more XP!');
+      }
+    }, 60000);
   }
 
   init();
