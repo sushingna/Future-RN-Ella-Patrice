@@ -52,10 +52,16 @@
   <section class="page active" id="page-home" data-route="home" aria-label="Home">
     <div class="page-inner">
       <div class="card hero-card">
-        <div class="teddy-bounce" aria-hidden="true">🧸</div>
+        <img class="profile-pic" src="images/ella.jpg" alt="Ella Patrice Vasquez" />
         <h1>Hiiiii, Future Nurse! 🩺💕</h1>
-        <p class="subtitle">Welcome to your completely unnecessary but highly important nursing survival website.</p>
-        <p class="joke-line">Created because apparently surviving nursing school wasn't already enough of a side quest. 😭</p>
+        <p class="subtitle">Welcome to your little nursing survival corner — because surviving nursing school deserves a little extra support. 💗.</p>
+        <div class="profile-info">
+          <div class="profile-row"><span class="profile-icon">🧸</span><span class="profile-label">Name</span><span class="profile-value">Ella Patrice Vasquez</span></div>
+          <div class="profile-row"><span class="profile-icon">🩺</span><span class="profile-label">Course</span><span class="profile-value">Nursing</span></div>
+          <div class="profile-row"><span class="profile-icon">💗</span><span class="profile-label">Favorite Color</span><span class="profile-value">Pink</span></div>
+          <div class="profile-row"><span class="profile-icon">🥑</span><span class="profile-label">Favorite Shake</span><span class="profile-value">Avocado</span></div>
+          <div class="profile-row"><span class="profile-icon">🍣</span><span class="profile-label">Favorite Food</span><span class="profile-value">Sushi (I guess)</span></div>
+        </div>
         <div class="hero-actions">
           <button class="btn btn-primary" id="btn-start-quest">START QUEST 🎮</button>
           <button class="btn btn-secondary" id="btn-explore">EXPLORE WEBSITE ✨</button>
@@ -114,6 +120,7 @@
         <div class="progress-track" role="progressbar" aria-label="Quest progress" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0" id="progress-bar-wrap">
           <div class="progress-fill" id="progress-fill"></div>
         </div>
+        <p class="mission-text small" id="quest-refresh-note">🌅 Quests refresh every day — complete them again tomorrow for more XP!</p>
 
         <div class="quest-list" id="quest-list">
           <div class="quest-card" data-quest="study" data-xp="100">
@@ -234,6 +241,16 @@
             <h3>Nursing Memory</h3>
             <p>Watch the sequence. Repeat it back.</p>
           </button>
+          <button class="game-choice-card" id="open-wordsearch-game">
+            <div class="quest-icon">🔎</div>
+            <h3>Nursing Word Search</h3>
+            <p>Find all the nursing &amp; medicine words.</p>
+          </button>
+          <button class="game-choice-card avo-choice-card" id="open-avocado-game">
+            <div class="quest-icon">🥑</div>
+            <h3>Avocado Shake Run <span class="avo-secret-badge">✨ secret level</span></h3>
+            <p>30 seconds. Catch the good stuff. Survive nursing school.</p>
+          </button>
         </div>
       </div>
 
@@ -242,7 +259,7 @@
         <button class="btn-back" data-back-target="minigames-hub">← Back</button>
         <h2>Catch the Hearts 💕</h2>
         <div class="game-hud">
-          <div class="hud-item">⏱️ <span id="game-timer">20</span>s</div>
+          <div class="hud-item">⏱️ <span id="game-timer">60</span>s</div>
           <div class="hud-item">💗 Score: <span id="game-score">0</span></div>
         </div>
         <div class="game-container" id="game-container">
@@ -260,6 +277,56 @@
         <div class="memory-input-grid" id="memory-input-grid" aria-hidden="true"></div>
         <p class="memory-result" id="memory-result" aria-live="polite"></p>
         <button class="btn btn-primary" id="btn-start-memory">Start Round</button>
+      </div>
+
+      <!-- Nursing Word Search sub-screen -->
+      <div class="card sub-screen hidden" id="wordsearch-game-view">
+        <button class="btn-back" data-back-target="minigames-hub">← Back</button>
+        <h2>Nursing Word Search 🔎</h2>
+        <p class="mission-text">Find every nursing &amp; medicine word hiding in the grid.</p>
+        <div class="game-hud">
+          <div class="hud-item">🏳️ Level <span id="ws-level-current">1</span>/5</div>
+          <div class="hud-item">🔎 Found: <span id="ws-found-count">0</span>/<span id="ws-total-count">0</span></div>
+          <div class="hud-item">⏱️ <span id="ws-timer">0</span>s</div>
+        </div>
+        <div class="ws-grid" id="ws-grid" role="grid" aria-label="Word search grid"></div>
+        <div class="ws-word-list" id="ws-word-list" aria-live="polite"></div>
+        <p class="ws-result" id="ws-result" aria-live="polite"></p>
+        <button class="btn btn-primary" id="btn-start-wordsearch">Start Word Search</button>
+      </div>
+
+      <!-- Avocado Shake Run sub-screen -->
+      <div class="card sub-screen hidden" id="avocado-game-view">
+        <button class="btn-back" id="btn-avo-back" data-back-target="minigames-hub">← Back</button>
+        <h2>🥑 Avocado Shake Run</h2>
+        <p class="mission-text small">"Because apparently getting an avocado shake requires clinical skills." 😭🩺</p>
+
+        <!-- Intro dialogue -->
+        <div class="avo-dialogue-box" id="avo-intro-box">
+          <div class="teddy-bounce" aria-hidden="true">🧸</div>
+          <p class="avo-dialogue-line" id="avo-intro-line">Nurse Ella, we have an emergency. 🚨</p>
+          <button class="btn btn-primary" id="btn-avo-next">Next →</button>
+        </div>
+
+        <!-- Game HUD -->
+        <div class="game-hud avo-hud hidden" id="avo-hud">
+          <div class="hud-item">🎯 <span id="avo-level">Level 1/5</span></div>
+          <div class="hud-item">💗 <span id="avo-score">0</span></div>
+          <div class="hud-item" id="avo-lives">❤️❤️❤️❤️❤️</div>
+        </div>
+        <p class="avo-collection hidden" id="avo-collection">🥑 Avocados: 0/5</p>
+
+        <!-- Game area -->
+        <div class="avo-container hidden" id="avo-container">
+          <div class="avo-event-banner" id="avo-event-banner"></div>
+          <div class="avo-combo-popup" id="avo-combo-popup"></div>
+          <p class="game-toast" id="avo-toast"></p>
+          <div class="avo-player" id="avo-player">🧸</div>
+        </div>
+        <p class="avo-message hidden" id="avo-message"></p>
+
+        <!-- Results / secret ending -->
+        <div class="avo-results hidden" id="avo-results"></div>
       </div>
 
     </div>
@@ -332,6 +399,7 @@
         </div>
         <button class="btn btn-primary" id="btn-claim-bonus">CLAIM BONUS QUEST 🥑🥤</button>
         <p class="tiny-note">(totally optional, no pressure 🫶)</p>
+        <p class="claim-instruction hidden" id="claim-instruction">📢 Quest claimed! Now go inform <strong>Francisco Dag-uman</strong> that you already completed the Bonus Quest. 🥑🩺</p>
       </div>
 
       <div class="card hidden" id="final-screen-block">
@@ -366,6 +434,9 @@
 
 <!-- Floating joke button (always available) -->
 <button class="fab" id="btn-joke-fab" aria-label="Get a random nursing joke">😂</button>
+
+<!-- Floating settings button (mobile only — the topnav settings button is hidden below 700px) -->
+<button class="icon-btn fab-settings" id="btn-settings-mobile" aria-label="Open settings" aria-haspopup="dialog">⚙️</button>
 
 <!-- Settings modal -->
 <div class="modal-overlay hidden" id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
