@@ -167,6 +167,23 @@ body.anim-off .float-item { animation: none; }
 .icon-btn:hover { transform: rotate(20deg); }
 .icon-btn:focus-visible { outline: 3px solid var(--lavender-deep); outline-offset: 2px; }
 
+/* Settings button shown on mobile only — .topnav (which holds the desktop
+   settings button) is display:none below 700px, so without this the
+   settings gear is completely unreachable on phones. */
+.fab-settings {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 95;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(6px);
+  box-shadow: var(--shadow-soft);
+}
+
+@media (min-width: 700px) {
+  .fab-settings { display: none; }
+}
+
 /* ---------- bottom nav (mobile) ---------- */
 
 .bottom-nav {
@@ -346,6 +363,83 @@ body.anim-off .page.active { animation: none; }
 .teddy-bounce { font-size: 3.6rem; animation: teddyBounce 2.2s ease-in-out infinite; margin-bottom: 10px; }
 body.anim-off .teddy-bounce { animation: none; }
 
+.profile-pic {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8px 24px rgba(255, 143, 192, 0.45), 0 0 0 4px rgba(255, 182, 213, 0.35);
+  margin-bottom: 14px;
+}
+
+.profile-info {
+  position: relative;
+  text-align: left;
+  background: linear-gradient(135deg, rgba(255, 214, 230, 0.55) 0%, rgba(227, 217, 251, 0.45) 100%);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  border-radius: 20px;
+  padding: 16px 18px;
+  margin: 12px 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow:
+    0 8px 32px rgba(255, 143, 192, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  overflow: hidden;
+}
+
+.profile-info::before {
+  content: "";
+  position: absolute;
+  top: -40%;
+  left: -20%;
+  width: 70%;
+  height: 140%;
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.55), transparent 60%);
+  transform: rotate(-15deg);
+  pointer-events: none;
+}
+
+[data-theme="dark"] .profile-info {
+  background: linear-gradient(135deg, rgba(255, 143, 192, 0.16) 0%, rgba(205, 184, 247, 0.14) 100%);
+  border: 1.5px solid rgba(255, 182, 213, 0.28);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.profile-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 26px auto 1fr;
+  align-items: baseline;
+  gap: 8px;
+  padding: 7px 4px;
+  font-size: 0.92rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+}
+[data-theme="dark"] .profile-row { border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+.profile-row:last-child { border-bottom: none; }
+
+.profile-icon { font-size: 1rem; line-height: 1; }
+
+.profile-label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--pink-deep);
+  white-space: nowrap;
+}
+
+.profile-value {
+  color: var(--text-dark);
+  text-align: right;
+  font-weight: 600;
+}
+
 @keyframes teddyBounce {
   0%, 100% { transform: translateY(0) rotate(-4deg); }
   50% { transform: translateY(-12px) rotate(4deg); }
@@ -403,6 +497,7 @@ body.anim-off .teddy-bounce { animation: none; }
 }
 
 .mission-text { font-weight: 600; color: var(--text-dark); }
+#quest-refresh-note { font-size: 0.85rem; text-align: center; color: var(--text-soft); margin-top: 10px; margin-bottom: 0; }
 
 /* ---------- quest cards ---------- */
 
@@ -509,14 +604,172 @@ body.anim-off .game-target { animation: none; }
 .game-toast {
   position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
   background: var(--white); color: var(--text-dark);
-  padding: 6px 14px; border-radius: 999px;
-  font-weight: 700; font-size: 0.85rem;
+  padding: 6px 14px; border-radius: 16px;
+  font-weight: 700; font-size: clamp(0.72rem, 3vw, 0.85rem);
   box-shadow: var(--shadow-soft);
   opacity: 0; transition: opacity var(--transition-fast);
-  pointer-events: none; white-space: nowrap;
+  pointer-events: none; white-space: normal;
+  overflow-wrap: break-word;
+  max-width: min(92%, 320px);
+  width: max-content;
+  box-sizing: border-box;
+  text-align: center;
 }
 
 .game-toast.show { opacity: 1; }
+
+/* ---------- avocado shake run ---------- */
+
+.avo-choice-card { border-color: var(--pink); background: linear-gradient(160deg, var(--surface-alt), var(--blush)); }
+.avo-secret-badge { display: block; font-size: 0.6rem; font-weight: 700; color: var(--pink-deep); margin-top: 2px; letter-spacing: 0.03em; }
+
+.avo-dialogue-box {
+  background: var(--surface-alt);
+  border-radius: var(--radius-md);
+  padding: 18px 14px;
+  margin: 10px 0;
+  text-align: center;
+}
+
+.avo-dialogue-line { font-weight: 700; color: var(--text-dark); min-height: 1.4em; margin: 0 0 12px; }
+
+.avo-hud {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-around;
+  gap: 6px 10px;
+}
+.avo-hud .hud-item {
+  font-size: clamp(0.75rem, 3vw, 0.95rem);
+  white-space: nowrap;
+}
+.avo-collection {
+  text-align: center;
+  font-weight: 700;
+  color: var(--pink-deep);
+  font-size: clamp(0.78rem, 3vw, 0.9rem);
+  margin: 4px 0 10px;
+}
+
+/* Game area: sized responsively so it fills more of the screen on mobile
+   without ever pushing the HUD/messages off-screen or causing overflow. */
+.avo-container {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  height: min(64vh, 560px);
+  min-height: 340px;
+  background: linear-gradient(160deg, var(--surface-alt), var(--lavender));
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 8px;
+  border: 2px solid var(--pink);
+  touch-action: none;
+  box-sizing: border-box;
+}
+
+.avo-player {
+  position: absolute;
+  bottom: 6px;
+  left: 0;
+  font-size: clamp(2rem, 8vw, 2.6rem);
+  line-height: 1;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15));
+  z-index: 5;
+  pointer-events: none;
+}
+
+.avo-falling {
+  position: absolute;
+  top: -50px;
+  line-height: 1;
+  user-select: none;
+  pointer-events: none;
+}
+
+.avo-falling.avo-golden {
+  filter: drop-shadow(0 0 8px gold) drop-shadow(0 0 14px orange);
+  animation: avoGlow 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes avoGlow {
+  from { transform: scale(1); }
+  to { transform: scale(1.18); }
+}
+
+body.anim-off .avo-falling.avo-golden { animation: none; }
+
+.avo-event-banner {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--white);
+  color: var(--pink-deep);
+  font-weight: 700;
+  font-size: clamp(0.68rem, 3vw, 0.78rem);
+  padding: 6px 12px;
+  border-radius: 16px;
+  box-shadow: var(--shadow-soft);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+  z-index: 6;
+  white-space: normal;
+  overflow-wrap: break-word;
+  max-width: min(92%, 320px);
+  width: max-content;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.avo-event-banner.show { opacity: 1; }
+
+.avo-combo-popup {
+  position: absolute;
+  top: 44px;
+  left: 50%;
+  transform: translateX(-50%) scale(0.8);
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--pink-deep);
+  background: var(--blush);
+  padding: 4px 12px;
+  border-radius: 999px;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+  z-index: 6;
+  white-space: nowrap;
+  max-width: 90%;
+  font-size: clamp(0.75rem, 3vw, 0.95rem);
+}
+
+.avo-combo-popup.show { opacity: 1; transform: translateX(-50%) scale(1); }
+
+.avo-message {
+  text-align: center;
+  font-weight: 700;
+  color: var(--pink-deep);
+  min-height: 24px;
+  font-size: clamp(0.82rem, 3.2vw, 1rem);
+  overflow-wrap: break-word;
+  padding: 0 4px;
+}
+
+.avo-results {
+  text-align: center;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+.avo-results .reward-box { text-align: left; }
+.avo-stars { margin: 2px 0; font-size: clamp(0.8rem, 3vw, 0.9rem); }
+
+@media (max-width: 480px) {
+  .avo-container { height: min(58vh, 480px); min-height: 300px; }
+}
 
 /* ---------- memory game ---------- */
 
@@ -556,6 +809,75 @@ body.anim-off .game-target { animation: none; }
 .memory-btn:focus-visible { outline: 3px solid var(--lavender-deep); outline-offset: 2px; }
 
 .memory-result { font-weight: 700; text-align: center; min-height: 24px; color: var(--pink-deep); }
+
+/* ---------- word search game ---------- */
+
+.ws-grid {
+  --ws-size: 13;
+  display: grid;
+  grid-template-columns: repeat(var(--ws-size), 1fr);
+  gap: 2px;
+  background: var(--border-soft);
+  border: 2px solid var(--pink);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin-bottom: 14px;
+  aspect-ratio: 1 / 1;
+  touch-action: none;
+}
+
+.ws-cell {
+  background: var(--surface-alt);
+  border: none;
+  color: var(--text-dark);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: clamp(0.5rem, 2.4vw, 0.85rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  aspect-ratio: 1 / 1;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.ws-cell:hover { background: var(--blush); }
+.ws-cell:focus-visible { outline: 2px solid var(--lavender-deep); outline-offset: -2px; }
+.ws-cell.selecting { background: var(--lavender-deep); color: var(--white); }
+.ws-cell.found { background: var(--success); color: var(--white); }
+.ws-cell.fail { background: var(--danger); color: var(--white); }
+
+.ws-word-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.ws-chip {
+  background: var(--surface-alt);
+  border: 2px solid var(--border-soft);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-soft);
+  letter-spacing: 0.5px;
+}
+
+.ws-chip.found {
+  background: var(--success);
+  border-color: var(--success);
+  color: var(--white);
+  text-decoration: line-through;
+}
+
+.ws-result { font-weight: 700; text-align: center; min-height: 24px; color: var(--pink-deep); }
 
 /* ---------- messages ---------- */
 
@@ -643,6 +965,22 @@ body.anim-off .motivation-box p { animation: none; }
 .reward-box { background: var(--lavender); border-radius: var(--radius-md); padding: 16px; margin: 14px 0; }
 .reward-box p { margin: 4px 0; }
 .tiny-note { font-size: 0.8rem; color: var(--text-soft); margin-top: 8px; }
+
+.claim-instruction {
+  margin-top: 14px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(255, 214, 230, 0.6), rgba(227, 217, 251, 0.5));
+  border: 1.5px solid rgba(255, 143, 192, 0.4);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  text-align: center;
+}
+[data-theme="dark"] .claim-instruction {
+  background: linear-gradient(135deg, rgba(255, 143, 192, 0.16), rgba(205, 184, 247, 0.14));
+  border: 1.5px solid rgba(255, 182, 213, 0.28);
+}
 
 /* ---------- FAB ---------- */
 
@@ -756,11 +1094,17 @@ body.welcome-open { overflow: hidden; }
   .stats-panel { grid-template-columns: repeat(3, 1fr); }
   .final-stats { grid-template-columns: 1fr 1fr; }
   .fab { bottom: 22px; }
+  /* Give the mini games page (and the Avocado Shake Run area within it)
+     more breathing room on larger screens. */
+  #page-minigames { max-width: 760px; }
+  .avo-container { height: min(64vh, 620px); }
 }
 
 @media (max-width: 480px) {
   .status-row { grid-template-columns: 64px 1fr 38px; }
   .achievements-grid { grid-template-columns: 1fr; }
+  .profile-pic { width: 140px; height: 140px; }
+  .profile-row { grid-template-columns: 22px auto 1fr; font-size: 0.86rem; }
 }
 
 @media (max-width: 360px) {
